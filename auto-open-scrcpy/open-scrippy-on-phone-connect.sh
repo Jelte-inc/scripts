@@ -2,8 +2,12 @@
 
 # Device model which screen should be mirrored
 # To fetch this type "adb devices -l" in the terminal and copy the modelnumber from the device you want to use for screen mirroring
-deviceModel=A142
-pinCode="67676767"
+set -a
+source .env
+set +a
+
+deviceModel=$DEVICE_MODEL
+pinCode=$PIN_CODE
 
 # Get connected devices
 connectedDevices="$(adb devices)"
@@ -29,8 +33,8 @@ deviceId="$(adb devices -l | grep -i $deviceModel | grep -o '^[^ ]*')"
 echo selected device is: $deviceId >> phone-connection.log
 
 # Check screen state and if phone is locked or not
-screenState="$(adb shell dumpsys display | grep "mScreenOn")"
-if [ "$screenState"="mScreenOn=false" ]; then
+screenState="$(adb shell dumpsys display | grep "mScreenState")"
+if [[ "$screenState" == *"mScreenState=OFF"* ]]; then
     # Unlock and open login screen
     adb -s $deviceId shell input keyevent 26
     adb -s $deviceId shell input keyevent 66
@@ -39,14 +43,14 @@ if [ "$screenState"="mScreenOn=false" ]; then
     echo turned on phone screen and opened login screen >> phone-connection.log
 else
     screenLockStatus="$(adb shell dumpsys deviceidle | grep 'mScreenLocked')"
-    if [ "$screenLockStatus"="mScreenLocked=true"]; then
+    if [[ "$screenLockStatus" == *"mScreenLocked=true"* ]]; then
         # Open login screen
         adb -s $deviceId shell input keyevent 66
         sleep 2
         adb -s $deviceId shell input text $pinCode
         echo opened login screen and logged in>> phone-connection.log
     else
-        echo "your phone is already unlocked. (idiot😅)"
+        echo "your phone is already unlocked. (idiot😅)" >> phone-connection.log
     fi
 fi
 
